@@ -30,10 +30,10 @@ DEFAULT_SCAN_INTERVAL = 3600
 DEFAULT_SPEED = 32
 DEFAULT_ENERGY = 0x6000  # Cat-Printer "text" energy; thin strokes need this
 DEFAULT_IMAGE_ENERGY = 0x4000  # Cat-Printer "image" energy (photos/dithered)
-DEFAULT_FEED = 128  # Cat-Printer's finish feed
+DEFAULT_FEED = 128  # Cat-Printer finish feed (pixels)
 DEFAULT_CHUNK_SIZE = 200
 DEFAULT_PACKET_DELAY = 20
-DEFAULT_PROBLEM_FEEDING = False
+DEFAULT_PROBLEM_FEEDING = False  # CTP500 uses the standard feed_paper command
 DEFAULT_KEEP_CONNECTION = False
 
 # 1x1 white PNG placeholder for the "last receipt" image entity.
