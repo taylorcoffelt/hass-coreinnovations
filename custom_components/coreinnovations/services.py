@@ -343,20 +343,40 @@ async def _handle_print_box(call: ServiceCall) -> ServiceResponse:
     return await _deliver(hass, call, image)
 
 
+def _build_test_image() -> PILImage.Image:
+    """A labelled all-black calibration strip used to validate the protocol."""
+    strip = PILImage.new("L", (render.PRINTER_WIDTH, 120), 0)  # all black
+    label = render.render_text("CTP500 TEST", size=32, align="center", bold=True)
+    out = PILImage.new("L", (render.PRINTER_WIDTH, strip.height + label.height), 255)
+    out.paste(strip, (0, 0))
+    out.paste(label, (0, strip.height))
+    return out
+
+
 async def _handle_print_test(call: ServiceCall) -> ServiceResponse:
     """Render a labelled all-black test strip to validate the protocol."""
     hass = call.hass
-
-    def _build() -> PILImage.Image:
-        strip = PILImage.new("L", (render.PRINTER_WIDTH, 120), 0)  # all black
-        label = render.render_text("CTP500 TEST", size=32, align="center", bold=True)
-        out = PILImage.new("L", (render.PRINTER_WIDTH, strip.height + label.height), 255)
-        out.paste(strip, (0, 0))
-        out.paste(label, (0, strip.height))
-        return out
-
-    image = await hass.async_add_executor_job(_build)
+    image = await hass.async_add_executor_job(_build_test_image)
     return await _deliver(hass, call, image)
+
+
+async def async_test_print(hass: HomeAssistant, entry_id: str) -> dict:
+    """Render and print the calibration strip to one printer (used by the button)."""
+    entry = hass.data[DOMAIN][entry_id]
+    image = await hass.async_add_executor_job(_build_test_image)
+
+    buffer = io.BytesIO()
+    image.convert("RGB").save(buffer, format="PNG")
+    png = buffer.getvalue()
+    entry["image_coordinator"].async_set_updated_data(
+        (Image(content_type="image/png", content=png), entry["coordinator"].data)
+    )
+
+    address = entry["address"]
+    ble_device = bluetooth.async_ble_device_from_address(hass, address, connectable=True)
+    if ble_device is None:
+        raise HomeAssistantError(f"Could not reach CTP500 {address} over Bluetooth")
+    return await entry["device"].print_image(ble_device, image, **entry["options"])
 
 
 async def _handle_print_image(call: ServiceCall) -> ServiceResponse:
