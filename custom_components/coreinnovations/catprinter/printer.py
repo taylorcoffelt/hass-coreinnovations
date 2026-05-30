@@ -29,8 +29,8 @@ BYTES_PER_ROW = PRINTER_WIDTH // 8
 DEFAULT_SPEED = 32
 DEFAULT_ENERGY = 0x6000
 DEFAULT_IMAGE_ENERGY = 0x4000
-# Clears the print head past the tear bar so the last printed rows eject fully.
-DEFAULT_FEED = 160
+# Clears the print head past the tear bar; matches Cat-Printer's finish feed.
+DEFAULT_FEED = 128
 
 # How many bytes to push per BLE write and how long to pause between writes.
 # Going over a proxy adds round-trip latency, so we batch into MTU-sized chunks

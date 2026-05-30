@@ -147,7 +147,7 @@ data:
 | --- | --- | --- |
 | Print speed | 32 | Lower is faster; values below ~4 can stall the feed motor. |
 | Darkness / energy | 24576 (`0x6000`) | Cat-Printer's "text" value; thin font strokes need it. Images default to 16384 (`0x4000`). Max 65535. |
-| Feed after print | 160 px | Advances paper past the tear bar so the last rows eject. |
+| Feed after print | 128 px | Cat-Printer's finish feed; advances paper past the tear bar. |
 
 Every print service also accepts per-call `energy`, `speed` and `feed` overrides,
 so you can tune darkness for a single receipt without changing the defaults.
