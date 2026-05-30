@@ -26,7 +26,7 @@ from PIL import Image as PILImage
 
 from . import render
 from .catprinter import CatPrinterDevice
-from .const import DOMAIN
+from .const import DEFAULT_IMAGE_ENERGY, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,11 +44,14 @@ _PRINT_SERVICES = (
 )
 _ALL_SERVICES = _PRINT_SERVICES + ("feed",)
 
-# Shared optional fields.
+# Shared optional fields: targeting, preview, and per-call tuning overrides
+# (any omitted value falls back to the printer's configured option).
 _TARGET = {
     vol.Optional("device_id"): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional("preview", default=False): cv.boolean,
     vol.Optional("feed"): vol.All(vol.Coerce(int), vol.Range(min=0, max=500)),
+    vol.Optional("energy"): vol.All(vol.Coerce(int), vol.Range(min=0, max=0xFFFF)),
+    vol.Optional("speed"): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
 }
 _ALIGN = vol.In(["left", "center", "right"])
 
@@ -194,9 +197,17 @@ def _targets(hass: HomeAssistant, call: ServiceCall) -> list[dict[str, Any]]:
 
 
 async def _deliver(
-    hass: HomeAssistant, call: ServiceCall, image: PILImage.Image
+    hass: HomeAssistant,
+    call: ServiceCall,
+    image: PILImage.Image,
+    *,
+    energy_default: int | None = None,
 ) -> ServiceResponse:
-    """Push ``image`` to the image entity and (unless previewing) print it."""
+    """Push ``image`` to the image entity and (unless previewing) print it.
+
+    ``energy_default`` lets a service pick a different default darkness than the
+    printer's configured value (e.g. images burn lighter than text).
+    """
     buffer = io.BytesIO()
     image.convert("RGB").save(buffer, format="PNG")
     png = buffer.getvalue()
@@ -211,7 +222,16 @@ async def _deliver(
     if call.data.get("preview"):
         return {"image": data_uri, "previewed": True}
 
-    feed_override = call.data.get("feed")
+    # Per-call tuning overrides win over configured options; the service-level
+    # energy default applies only when neither a call value nor override exists.
+    overrides: dict[str, int] = {}
+    for key in ("feed", "energy", "speed"):
+        value = call.data.get(key)
+        if value is not None:
+            overrides[key] = int(value)
+    if "energy" not in overrides and energy_default is not None:
+        overrides["energy"] = energy_default
+
     results: list[dict[str, Any]] = []
     for entry in targets:
         device: CatPrinterDevice = entry["device"]
@@ -221,9 +241,7 @@ async def _deliver(
             raise HomeAssistantError(
                 f"Could not reach CTP500 {address} over Bluetooth"
             )
-        options = dict(entry["options"])
-        if feed_override is not None:
-            options["feed"] = feed_override
+        options = {**entry["options"], **overrides}
         try:
             result = await device.print_image(ble_device, image, **options)
         except Exception as err:  # noqa: BLE001 - surface a clean error to HA
@@ -364,7 +382,7 @@ async def _handle_print_image(call: ServiceCall) -> ServiceResponse:
         threshold=call.data["threshold"],
         align=call.data["align"],
     )
-    return await _deliver(hass, call, image)
+    return await _deliver(hass, call, image, energy_default=DEFAULT_IMAGE_ENERGY)
 
 
 async def _handle_feed(call: ServiceCall) -> ServiceResponse:

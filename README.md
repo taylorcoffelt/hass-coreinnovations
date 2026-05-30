@@ -146,8 +146,11 @@ data:
 | Option | Default | Notes |
 | --- | --- | --- |
 | Print speed | 32 | Lower is faster; values below ~4 can stall the feed motor. |
-| Darkness / energy | 12288 (`0x3000`) | Higher prints darker (max 65535). |
+| Darkness / energy | 24576 (`0x6000`) | Cat-Printer's "text" value; thin font strokes need it. Images default to 16384 (`0x4000`). Max 65535. |
 | Feed after print | 160 px | Advances paper past the tear bar so the last rows eject. |
+
+Every print service also accepts per-call `energy`, `speed` and `feed` overrides,
+so you can tune darkness for a single receipt without changing the defaults.
 | Delay between BLE writes | 20 ms | Increase if a proxy drops data mid-print. |
 | BLE write chunk size | 200 bytes | Bytes per `write_gatt_char` to the AE01 characteristic. |
 | Keep BLE connection open | off | Stay connected between jobs (faster, uses more battery). |
@@ -169,7 +172,8 @@ This integration stands on the shoulders of three excellent projects:
 
 - **Cat-printer protocol** ported from
   [NaitLee/Cat-Printer](https://github.com/NaitLee/Cat-Printer) — the framing,
-  CRC8 table and command set for the M02/MX family.
+  CRC8 table, command set and default tuning (speed 32, text energy `0x6000`,
+  image energy `0x4000`) for the M02/MX family.
 - **Home Assistant / Bluetooth-proxy plumbing** adapted from
   [eigger/hass-niimbot](https://github.com/eigger/hass-niimbot) — discovery,
   config flow and proxy-aware connection management.

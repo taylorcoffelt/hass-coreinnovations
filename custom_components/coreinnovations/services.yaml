@@ -23,6 +23,18 @@ print_text:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     text:
       name: Text
       description: Text to print (supports newlines; long lines wrap to 384px).
@@ -88,6 +100,18 @@ print_image:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     image:
       name: Image source
       description: "URL, allowlisted file path, camera.<entity_id>, or data: URI."
@@ -164,6 +188,18 @@ print_qr:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     data:
       name: Data
       description: Text or URL to encode.
@@ -215,6 +251,18 @@ print_barcode:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     data:
       name: Data
       required: true
@@ -290,6 +338,18 @@ print_table:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     rows:
       name: Rows
       description: List of rows, each a list of cell strings.
@@ -335,6 +395,18 @@ print_kvtable:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     rows:
       name: Pairs
       description: A mapping, or a list of [label, value] pairs.
@@ -374,6 +446,18 @@ print_box:
       required: false
       selector:
         number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
     text:
       name: Text
       required: true
@@ -418,6 +502,23 @@ print_test:
       default: false
       selector:
         boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
 
 feed:
   name: Feed paper

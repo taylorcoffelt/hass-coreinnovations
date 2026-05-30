@@ -22,10 +22,13 @@ NOTIFY_UUID = "0000ae02-0000-1000-8000-00805f9b34fb"
 PRINTER_WIDTH = 384
 BYTES_PER_ROW = PRINTER_WIDTH // 8
 
-# Default tuning. Speed is lower = faster (values < 4 may stall the feed motor).
-# Energy controls darkness; 0x3000 is a sane mid-point on this hardware.
+# Default tuning, matched to NaitLee/Cat-Printer. Speed is lower = faster
+# (values < 4 may stall the feed motor); Cat-Printer uses 32 (quality 3).
+# Energy controls darkness: Cat-Printer burns text at 0x6000 and images at
+# 0x4000 — 0x3000 under-burns thin strokes, so default to the text value.
 DEFAULT_SPEED = 32
-DEFAULT_ENERGY = 0x3000
+DEFAULT_ENERGY = 0x6000
+DEFAULT_IMAGE_ENERGY = 0x4000
 # Clears the print head past the tear bar so the last printed rows eject fully.
 DEFAULT_FEED = 160
 
