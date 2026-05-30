@@ -399,6 +399,7 @@ async def _handle_feed(call: ServiceCall) -> ServiceResponse:
         result = await device.feed_paper(
             ble_device,
             pixels,
+            problem_feeding=options["problem_feeding"],
             chunk_size=options["chunk_size"],
             packet_delay=options["packet_delay"],
         )

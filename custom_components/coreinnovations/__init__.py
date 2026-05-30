@@ -20,12 +20,14 @@ from .const import (
     CONF_FEED,
     CONF_KEEP_CONNECTION,
     CONF_PACKET_DELAY,
+    CONF_PROBLEM_FEEDING,
     CONF_SPEED,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_ENERGY,
     DEFAULT_FEED,
     DEFAULT_KEEP_CONNECTION,
     DEFAULT_PACKET_DELAY,
+    DEFAULT_PROBLEM_FEEDING,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SPEED,
     DOMAIN,
@@ -52,6 +54,7 @@ def _resolve_print_options(entry: ConfigEntry) -> dict:
         "chunk_size": int(value(CONF_CHUNK_SIZE, DEFAULT_CHUNK_SIZE)),
         # stored in milliseconds, the printer wants seconds
         "packet_delay": int(value(CONF_PACKET_DELAY, DEFAULT_PACKET_DELAY)) / 1000.0,
+        "problem_feeding": bool(value(CONF_PROBLEM_FEEDING, DEFAULT_PROBLEM_FEEDING)),
     }
 
 

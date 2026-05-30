@@ -12,6 +12,7 @@
           "packet_delay": "Delay between BLE writes (ms)",
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
+          "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
           "keep_connection": "Keep BLE connection open"
         }
       },
@@ -24,6 +25,7 @@
           "packet_delay": "Delay between BLE writes (ms)",
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
+          "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
           "keep_connection": "Keep BLE connection open"
         }
       }
@@ -45,6 +47,7 @@
           "packet_delay": "Delay between BLE writes (ms)",
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
+          "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
           "keep_connection": "Keep BLE connection open"
         }
       }

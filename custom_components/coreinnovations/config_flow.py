@@ -30,12 +30,14 @@ from .const import (
     CONF_FEED,
     CONF_KEEP_CONNECTION,
     CONF_PACKET_DELAY,
+    CONF_PROBLEM_FEEDING,
     CONF_SPEED,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_ENERGY,
     DEFAULT_FEED,
     DEFAULT_KEEP_CONNECTION,
     DEFAULT_PACKET_DELAY,
+    DEFAULT_PROBLEM_FEEDING,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SPEED,
     DOMAIN,
@@ -65,6 +67,7 @@ OPTIONS_SCHEMA = {
     vol.Required(CONF_PACKET_DELAY, default=DEFAULT_PACKET_DELAY): _number(0, 1000, 1, "milliseconds"),
     vol.Required(CONF_CHUNK_SIZE, default=DEFAULT_CHUNK_SIZE): _number(20, 512, 1, "bytes"),
     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): _number(10, 86400, 1, "seconds"),
+    vol.Required(CONF_PROBLEM_FEEDING, default=DEFAULT_PROBLEM_FEEDING): bool,
     vol.Required(CONF_KEEP_CONNECTION, default=DEFAULT_KEEP_CONNECTION): bool,
 }
 
