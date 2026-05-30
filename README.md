@@ -165,11 +165,19 @@ command set and CRC8 table.
 
 ## Credits
 
-- Protocol ported from [NaitLee/Cat-Printer](https://github.com/NaitLee/Cat-Printer).
-- Home Assistant / Bluetooth-proxy plumbing adapted from
-  [eigger/hass-niimbot](https://github.com/eigger/hass-niimbot).
-- Service ergonomics inspired by
-  [cognitivegears/ha-escpos-thermal-printer](https://github.com/cognitivegears/ha-escpos-thermal-printer).
+This integration stands on the shoulders of three excellent projects:
+
+- **Cat-printer protocol** ported from
+  [NaitLee/Cat-Printer](https://github.com/NaitLee/Cat-Printer) — the framing,
+  CRC8 table and command set for the M02/MX family.
+- **Home Assistant / Bluetooth-proxy plumbing** adapted from
+  [eigger/hass-niimbot](https://github.com/eigger/hass-niimbot) — discovery,
+  config flow and proxy-aware connection management.
+- **Receipt service ergonomics** modeled on
+  [cognitivegears/ha-escpos-thermal-printer](https://github.com/cognitivegears/ha-escpos-thermal-printer)
+  — the discrete `print_text` / `print_image` / `print_qr` / `print_table` /
+  `print_kvtable` / `print_box` / `feed` service surface, `device_id` targeting
+  and the preview workflow are all inspired by its ESC/POS integration.
 
 ## License
 
