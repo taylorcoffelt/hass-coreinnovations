@@ -11,6 +11,11 @@ DOMAIN = "coreinnovations"
 # AE00 cat-printer GATT service advertised by the CTP500.
 SERVICE_UUID = "0000ae00-0000-1000-8000-00805f9b34fb"
 
+# The CTP500 advertises a BLE local name like "Mini Printer-0825". Many cat
+# printers expose the name but not the AE00 service UUID in the advertisement,
+# so discovery matches on either.
+LOCAL_NAME_PREFIX = "Mini Printer"
+
 # Options / config keys.
 CONF_SPEED = "speed"
 CONF_ENERGY = "energy"

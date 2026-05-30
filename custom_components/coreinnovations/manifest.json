@@ -3,6 +3,10 @@
   "name": "Core Innovations CTP500",
   "bluetooth": [
     {
+      "local_name": "Mini Printer-*",
+      "connectable": true
+    },
+    {
       "service_uuid": "0000ae00-0000-1000-8000-00805f9b34fb",
       "connectable": true
     }

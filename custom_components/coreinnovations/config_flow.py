@@ -39,6 +39,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SPEED,
     DOMAIN,
+    LOCAL_NAME_PREFIX,
     SERVICE_UUID,
 )
 
@@ -69,7 +70,13 @@ OPTIONS_SCHEMA = {
 
 
 def _is_catprinter(info: BluetoothServiceInfoBleak) -> bool:
-    """True if this advertisement looks like an AE00 cat printer."""
+    """True if this advertisement looks like a CTP500 cat printer.
+
+    Matches by local name (e.g. "Mini Printer-0825") or, as a fallback, the
+    AE00 GATT service UUID when the printer happens to advertise it.
+    """
+    if info.name and info.name.startswith(LOCAL_NAME_PREFIX):
+        return True
     return SERVICE_UUID in [uuid.lower() for uuid in info.service_uuids]
 
 
