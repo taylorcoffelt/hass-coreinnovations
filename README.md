@@ -147,7 +147,7 @@ data:
 | --- | --- | --- |
 | Print speed | 32 | Lower is faster; values below ~4 can stall the feed motor. |
 | Darkness / energy | 12288 (`0x3000`) | Higher prints darker (max 65535). |
-| Feed after print | 80 px | Advances paper past the tear bar. |
+| Feed after print | 160 px | Advances paper past the tear bar so the last rows eject. |
 | Delay between BLE writes | 20 ms | Increase if a proxy drops data mid-print. |
 | BLE write chunk size | 200 bytes | Bytes per `write_gatt_char` to the AE01 characteristic. |
 | Keep BLE connection open | off | Stay connected between jobs (faster, uses more battery). |

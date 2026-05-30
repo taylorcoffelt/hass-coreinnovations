@@ -26,7 +26,8 @@ BYTES_PER_ROW = PRINTER_WIDTH // 8
 # Energy controls darkness; 0x3000 is a sane mid-point on this hardware.
 DEFAULT_SPEED = 32
 DEFAULT_ENERGY = 0x3000
-DEFAULT_FEED = 80
+# Clears the print head past the tear bar so the last printed rows eject fully.
+DEFAULT_FEED = 160
 
 # How many bytes to push per BLE write and how long to pause between writes.
 # Going over a proxy adds round-trip latency, so we batch into MTU-sized chunks
