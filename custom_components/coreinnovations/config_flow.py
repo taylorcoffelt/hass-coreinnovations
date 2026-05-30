@@ -63,7 +63,7 @@ def _number(minimum: float, maximum: float, step: float, unit: str) -> NumberSel
 OPTIONS_SCHEMA = {
     vol.Required(CONF_SPEED, default=DEFAULT_SPEED): _number(1, 255, 1, "lower=faster"),
     vol.Required(CONF_ENERGY, default=DEFAULT_ENERGY): _number(0, 0xFFFF, 1, "darkness"),
-    vol.Required(CONF_FEED, default=DEFAULT_FEED): _number(0, 500, 1, "pixels"),
+    vol.Required(CONF_FEED, default=DEFAULT_FEED): _number(0, 2000, 1, "pixels"),
     vol.Required(CONF_PACKET_DELAY, default=DEFAULT_PACKET_DELAY): _number(0, 1000, 1, "milliseconds"),
     vol.Required(CONF_CHUNK_SIZE, default=DEFAULT_CHUNK_SIZE): _number(20, 512, 1, "bytes"),
     vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): _number(10, 86400, 1, "seconds"),

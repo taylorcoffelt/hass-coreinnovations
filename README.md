@@ -147,8 +147,8 @@ data:
 | --- | --- | --- |
 | Print speed | 32 | Lower is faster; values below ~4 can stall the feed motor. |
 | Darkness / energy | 24576 (`0x6000`) | Cat-Printer's "text" value; thin font strokes need it. Images default to 16384 (`0x4000`). Max 65535. |
-| Feed after print | 128 px | Cat-Printer's finish feed; advances the last line past the tear bar. |
-| Feed by drawing blank lines | off | Enable only for cat printers that ignore the feed command ("problem feeding"). |
+| Feed after print | 200 px | Rows of blank feed that push the last printed line past the tear bar. |
+| Feed by drawing blank lines | on | Recommended for the CTP500: feeds via blank rows (reliable). Turn off to use the `feed_paper` command instead (Cat-Printer's method; unreliable on this unit). |
 
 Every print service also accepts per-call `energy`, `speed` and `feed` overrides,
 so you can tune darkness for a single receipt without changing the defaults.

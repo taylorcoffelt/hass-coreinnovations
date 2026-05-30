@@ -49,9 +49,10 @@ _ALL_SERVICES = _PRINT_SERVICES + ("feed",)
 _TARGET = {
     vol.Optional("device_id"): vol.All(cv.ensure_list, [cv.string]),
     vol.Optional("preview", default=False): cv.boolean,
-    vol.Optional("feed"): vol.All(vol.Coerce(int), vol.Range(min=0, max=500)),
+    vol.Optional("feed"): vol.All(vol.Coerce(int), vol.Range(min=0, max=2000)),
     vol.Optional("energy"): vol.All(vol.Coerce(int), vol.Range(min=0, max=0xFFFF)),
     vol.Optional("speed"): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
+    vol.Optional("problem_feeding"): cv.boolean,
 }
 _ALIGN = vol.In(["left", "center", "right"])
 
@@ -224,11 +225,13 @@ async def _deliver(
 
     # Per-call tuning overrides win over configured options; the service-level
     # energy default applies only when neither a call value nor override exists.
-    overrides: dict[str, int] = {}
+    overrides: dict[str, int | bool] = {}
     for key in ("feed", "energy", "speed"):
         value = call.data.get(key)
         if value is not None:
             overrides[key] = int(value)
+    if "problem_feeding" in call.data:
+        overrides["problem_feeding"] = bool(call.data["problem_feeding"])
     if "energy" not in overrides and energy_default is not None:
         overrides["energy"] = energy_default
 
