@@ -61,11 +61,12 @@ class Command:
 
     GET_DEVICE_STATE = 0xA3
     GET_DEVICE_INFO = 0xA8
+    UPDATE_DEVICE = 0xA9    # commit settings before a print run
     SET_DPI = 0xA4          # payload 0x32 (50) selects 200 DPI
     SET_SPEED = 0xBD        # uint8, lower = faster (values < 4 may stall feeding)
     SET_ENERGY = 0xAF       # uint16 LE, darkness (default ~0x3000, max 0xffff)
     APPLY_ENERGY = 0xBE     # payload 0x01
-    UPDATE_DEVICE = 0xA6    # start/end "lattice" (drawing mode)
+    LATTICE = 0xA6          # start/end "lattice" (drawing mode)
     DRAW_BITMAP = 0xA2      # one 48-byte row, each byte bit-reversed
     FEED_PAPER = 0xA1       # uint16 LE pixels
     RETRACT_PAPER = 0xA0    # uint16 LE pixels
@@ -94,6 +95,16 @@ def get_device_info() -> bytes:
     return make_command(Command.GET_DEVICE_INFO, b"\x00")
 
 
+def start_printing() -> bytes:
+    """Raw "begin print run" frame (identical bytes to get_device_state)."""
+    return bytes([0x51, 0x78, 0xA3, 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF])
+
+
+def update_device() -> bytes:
+    """Commit pending settings just before drawing (Cat-Printer 0xA9)."""
+    return make_command(Command.UPDATE_DEVICE, b"\x00")
+
+
 def set_dpi_as_200() -> bytes:
     return make_command(Command.SET_DPI, bytes([50]))
 
@@ -112,11 +123,11 @@ def apply_energy() -> bytes:
 
 
 def start_lattice() -> bytes:
-    return make_command(Command.UPDATE_DEVICE, _START_LATTICE)
+    return make_command(Command.LATTICE, _START_LATTICE)
 
 
 def end_lattice() -> bytes:
-    return make_command(Command.UPDATE_DEVICE, _END_LATTICE)
+    return make_command(Command.LATTICE, _END_LATTICE)
 
 
 def draw_bitmap(row: bytes) -> bytes:

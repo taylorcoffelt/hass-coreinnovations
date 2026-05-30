@@ -22,11 +22,17 @@ NOTIFY_UUID = "0000ae02-0000-1000-8000-00805f9b34fb"
 PRINTER_WIDTH = 384
 BYTES_PER_ROW = PRINTER_WIDTH // 8
 
-# Default tuning. Speed is lower = faster (values < 4 may stall the feed motor).
-# Energy controls darkness; 0x3000 is a sane mid-point on this hardware.
+# Default tuning, matched to NaitLee/Cat-Printer. Speed is lower = faster
+# (values < 4 may stall the feed motor); Cat-Printer uses 32 (quality 3).
+# Energy controls darkness: Cat-Printer burns text at 0x6000 and images at
+# 0x4000 — 0x3000 under-burns thin strokes, so default to the text value.
 DEFAULT_SPEED = 32
-DEFAULT_ENERGY = 0x3000
-DEFAULT_FEED = 80
+DEFAULT_ENERGY = 0x6000
+DEFAULT_IMAGE_ENERGY = 0x4000
+# Clears the print head past the tear bar; matches Cat-Printer's finish feed.
+DEFAULT_FEED = 128
+# Cat-Printer drops to this slow speed before feeding, for a clean advance.
+FEED_SPEED = 8
 
 # How many bytes to push per BLE write and how long to pause between writes.
 # Going over a proxy adds round-trip latency, so we batch into MTU-sized chunks
@@ -91,6 +97,21 @@ class CatPrinterClient:
             if packet_delay > 0:
                 await sleep(packet_delay)
 
+    def _feed(self, pixels: int, problem_feeding: bool) -> bytes:
+        """Build the post-print feed, matching Cat-Printer's _finish().
+
+        Normal printers advance with the FEED_PAPER (0xA1) command; printers
+        flagged "problem_feeding" ignore it and must be advanced by drawing
+        blank rows instead.  Either way this runs *after* end_lattice at the
+        slow feed speed.
+        """
+        if pixels <= 0:
+            return b""
+        if problem_feeding:
+            blank = cmd.draw_bitmap(bytes(BYTES_PER_ROW))
+            return blank * pixels
+        return cmd.feed_paper(pixels)
+
     async def print_image(
         self,
         image: Image.Image,
@@ -98,36 +119,46 @@ class CatPrinterClient:
         speed: int = DEFAULT_SPEED,
         energy: int = DEFAULT_ENERGY,
         feed: int = DEFAULT_FEED,
+        problem_feeding: bool = False,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> int:
-        """Rasterise and print ``image``. Returns the number of rows printed."""
+        """Rasterise and print ``image``. Returns the number of rows printed.
+
+        The command order mirrors NaitLee/Cat-Printer's _prepare()/_finish():
+        energy is applied *before* drawing, and the paper is fed *after*
+        end_lattice at a slow speed (feeding inside the lattice is ignored).
+        """
         rows = image_to_rows(image)
         _LOGGER.debug(
-            "Printing %d rows (speed=%s energy=%s feed=%s)", len(rows), speed, energy, feed
+            "Printing %d rows (speed=%s energy=%s feed=%s problem_feeding=%s)",
+            len(rows), speed, energy, feed, problem_feeding,
         )
 
-        # 1-5: device state, DPI, speed, energy, enter draw mode.
+        # _prepare: state, begin run, DPI, speed, energy, apply, commit, lattice.
         prepare = bytearray()
         prepare += cmd.get_device_state()
+        prepare += cmd.start_printing()
         prepare += cmd.set_dpi_as_200()
         prepare += cmd.set_speed(speed)
         prepare += cmd.set_energy(energy)
+        prepare += cmd.apply_energy()
+        prepare += cmd.update_device()
         prepare += cmd.start_lattice()
         await self._write_chunked(bytes(prepare), chunk_size, packet_delay)
 
-        # 6: bitmap rows.
+        # Bitmap rows.
         body = bytearray()
         for row in rows:
             body += cmd.draw_bitmap(row)
         await self._write_chunked(bytes(body), chunk_size, packet_delay)
 
-        # 7-9: apply energy, feed past the tear bar, leave draw mode.
+        # _finish: leave draw mode, slow down, feed past the tear bar.
         finish = bytearray()
-        finish += cmd.apply_energy()
-        if feed > 0:
-            finish += cmd.feed_paper(feed)
         finish += cmd.end_lattice()
+        finish += cmd.set_speed(FEED_SPEED)
+        finish += self._feed(feed, problem_feeding)
+        finish += cmd.get_device_state()
         await self._write_chunked(bytes(finish), chunk_size, packet_delay)
 
         return len(rows)
@@ -136,13 +167,14 @@ class CatPrinterClient:
         self,
         pixels: int,
         *,
+        problem_feeding: bool = False,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> None:
         """Advance the paper by ``pixels`` without printing anything."""
         buffer = bytearray()
         buffer += cmd.get_device_state()
-        buffer += cmd.start_lattice()
-        buffer += cmd.feed_paper(pixels)
-        buffer += cmd.end_lattice()
+        buffer += cmd.set_speed(FEED_SPEED)
+        buffer += self._feed(pixels, problem_feeding)
+        buffer += cmd.get_device_state()
         await self._write_chunked(bytes(buffer), chunk_size, packet_delay)

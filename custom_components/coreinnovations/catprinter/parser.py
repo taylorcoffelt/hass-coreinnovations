@@ -126,6 +126,7 @@ class CatPrinterDevice:
         speed: int = DEFAULT_SPEED,
         energy: int = DEFAULT_ENERGY,
         feed: int = DEFAULT_FEED,
+        problem_feeding: bool = False,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> dict:
@@ -144,6 +145,7 @@ class CatPrinterDevice:
                     speed=speed,
                     energy=energy,
                     feed=feed,
+                    problem_feeding=problem_feeding,
                     chunk_size=chunk_size,
                     packet_delay=packet_delay,
                 )
@@ -166,6 +168,7 @@ class CatPrinterDevice:
         ble_device: BLEDevice,
         pixels: int,
         *,
+        problem_feeding: bool = False,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> dict:
@@ -173,7 +176,10 @@ class CatPrinterDevice:
             printer = await self._ensure_connected(ble_device)
             try:
                 await printer.feed_paper(
-                    pixels, chunk_size=chunk_size, packet_delay=packet_delay
+                    pixels,
+                    problem_feeding=problem_feeding,
+                    chunk_size=chunk_size,
+                    packet_delay=packet_delay,
                 )
             finally:
                 if not self.keep_connection:

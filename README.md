@@ -146,8 +146,12 @@ data:
 | Option | Default | Notes |
 | --- | --- | --- |
 | Print speed | 32 | Lower is faster; values below ~4 can stall the feed motor. |
-| Darkness / energy | 12288 (`0x3000`) | Higher prints darker (max 65535). |
-| Feed after print | 80 px | Advances paper past the tear bar. |
+| Darkness / energy | 24576 (`0x6000`) | Cat-Printer's "text" value; thin font strokes need it. Images default to 16384 (`0x4000`). Max 65535. |
+| Feed after print | 128 px | Cat-Printer's finish feed; advances paper past the tear bar. |
+| Feed by drawing blank lines | off | Enable only if your printer ignores the feed command ("problem feeding"). |
+
+Every print service also accepts per-call `energy`, `speed` and `feed` overrides,
+so you can tune darkness for a single receipt without changing the defaults.
 | Delay between BLE writes | 20 ms | Increase if a proxy drops data mid-print. |
 | BLE write chunk size | 200 bytes | Bytes per `write_gatt_char` to the AE01 characteristic. |
 | Keep BLE connection open | off | Stay connected between jobs (faster, uses more battery). |
@@ -157,8 +161,12 @@ data:
 - GATT: service `0000ae00-…`, write `0000ae01-…`, notify `0000ae02-…`.
 - Frame: `0x51 0x78 <cmd> 0x00 <len_lo> <len_hi> <payload…> <crc8(payload)> 0xff`.
 - Bitmap rows are 48 bytes, each byte **bit-reversed** before sending.
-- Print sequence: get state → set DPI 200 → set speed → set energy →
-  start lattice → draw rows → apply energy → feed → end lattice.
+- Print sequence (mirrors Cat-Printer's `_prepare`/`_finish`): get state →
+  begin → set DPI 200 → set speed → set energy → apply energy → update device →
+  start lattice → draw rows → **end lattice → slow to speed 8 → feed → get
+  state**. The paper is fed *after* leaving the lattice; feeding inside it is
+  ignored by the hardware. Printers flagged "problem feeding" are advanced by
+  drawing blank rows instead of the feed command.
 
 See `custom_components/coreinnovations/catprinter/commander.py` for the full
 command set and CRC8 table.
@@ -169,7 +177,8 @@ This integration stands on the shoulders of three excellent projects:
 
 - **Cat-printer protocol** ported from
   [NaitLee/Cat-Printer](https://github.com/NaitLee/Cat-Printer) — the framing,
-  CRC8 table and command set for the M02/MX family.
+  CRC8 table, command set and default tuning (speed 32, text energy `0x6000`,
+  image energy `0x4000`) for the M02/MX family.
 - **Home Assistant / Bluetooth-proxy plumbing** adapted from
   [eigger/hass-niimbot](https://github.com/eigger/hass-niimbot) — discovery,
   config flow and proxy-aware connection management.
