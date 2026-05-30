@@ -36,7 +36,12 @@ from .const import (
 )
 from .services import async_register_services, async_unregister_services
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.IMAGE, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.IMAGE,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+]
 
 _LOGGER = logging.getLogger(__name__)
 
