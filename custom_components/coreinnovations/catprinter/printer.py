@@ -22,6 +22,14 @@ NOTIFY_UUID = "0000ae02-0000-1000-8000-00805f9b34fb"
 PRINTER_WIDTH = 384
 BYTES_PER_ROW = PRINTER_WIDTH // 8
 
+# Flow-control frames the printer pushes on the notify characteristic: it asks
+# us to pause when its buffer is filling and to resume once it has drained.
+# Ignoring these overflows the buffer and silently drops rows on long jobs.
+DATA_FLOW_PAUSE = b"\x51\x78\xae\x01\x01\x00\x10\x70\xff"
+DATA_FLOW_RESUME = b"\x51\x78\xae\x01\x01\x00\x00\x00\xff"
+# Safety cap so a missed "resume" can't wedge a print forever.
+FLOW_PAUSE_TIMEOUT = 10.0
+
 # Default tuning, matched to NaitLee/Cat-Printer. Speed is lower = faster
 # (values < 4 may stall the feed motor); Cat-Printer uses 32 (quality 3).
 # Energy controls darkness: Cat-Printer burns text at 0x6000 and images at
@@ -70,6 +78,7 @@ class CatPrinterClient:
         self._client = client
         self._notifications = bytearray()
         self._write_response: bool | None = None
+        self._paused = False
 
     def _use_response(self) -> bool:
         """Prefer write-with-response when AE01 supports it (Bleak's own rule).
@@ -97,8 +106,13 @@ class CatPrinterClient:
             pass
 
     def _on_notify(self, _characteristic: Any, data: bytearray) -> None:
+        frame = bytes(data)
+        if frame == DATA_FLOW_PAUSE:
+            self._paused = True
+        elif frame == DATA_FLOW_RESUME:
+            self._paused = False
         self._notifications.extend(data)
-        _LOGGER.debug("Notify (%d bytes): %s", len(data), data.hex())
+        _LOGGER.debug("Notify (%d bytes): %s", len(data), frame.hex())
 
     async def _write_chunked(
         self, data: bytes, chunk_size: int, packet_delay: float
@@ -113,6 +127,16 @@ class CatPrinterClient:
         response = self._use_response()
         for offset in range(0, len(data), chunk_size):
             chunk = data[offset : offset + chunk_size]
+            # Respect the printer's flow control: while it has asked us to pause
+            # (buffer filling) hold off, or it will drop the rows we send.
+            waited = 0.0
+            while self._paused:
+                if waited >= FLOW_PAUSE_TIMEOUT:
+                    _LOGGER.debug("Flow-control pause timed out; resuming")
+                    self._paused = False
+                    break
+                await sleep(0.05)
+                waited += 0.05
             await self._client.write_gatt_char(WRITE_UUID, chunk, response=response)
             if packet_delay > 0:
                 await sleep(packet_delay)
@@ -176,6 +200,9 @@ class CatPrinterClient:
         finish += cmd.get_device_state()
         await self._write_chunked(bytes(finish), chunk_size, packet_delay)
 
+        # write_gatt_char returns on command receipt, not on physical completion,
+        # so give the motor time to finish feeding before the caller disconnects.
+        await sleep(min(3.0, 0.5 + feed / 200.0))
         return len(rows)
 
     async def feed_paper(
