@@ -1,0 +1,440 @@
+print_text:
+  name: Print text
+  description: Render and print wrapped text.
+  fields:
+    device_id:
+      name: Printer
+      description: Target printer(s). If omitted, broadcasts to every configured CTP500.
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      description: Render to the "Last Receipt" image entity without using paper.
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      description: Extra pixels to advance after printing.
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    text:
+      name: Text
+      description: Text to print (supports newlines; long lines wrap to 384px).
+      required: true
+      example: "Hello from Home Assistant!"
+      selector:
+        text:
+          multiline: true
+    size:
+      name: Font size
+      description: Font size in pixels.
+      required: false
+      default: 28
+      selector:
+        number: { min: 8, max: 200, step: 1 }
+    align:
+      name: Alignment
+      required: false
+      default: left
+      selector:
+        select:
+          options: [left, center, right]
+    bold:
+      name: Bold
+      required: false
+      default: false
+      selector:
+        boolean:
+    underline:
+      name: Underline
+      required: false
+      default: none
+      selector:
+        select:
+          options: [none, single, double]
+    font:
+      name: Font file
+      description: Font filename bundled with the integration, or an absolute path.
+      required: false
+      default: ppb.ttf
+      selector:
+        text:
+
+print_image:
+  name: Print image
+  description: Print an image from a URL, local path, camera.<id> entity, or base64 data URI.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    image:
+      name: Image source
+      description: "URL, allowlisted file path, camera.<entity_id>, or data: URI."
+      required: true
+      example: "https://example.com/logo.png"
+      selector:
+        template:
+    image_width:
+      name: Target width
+      description: Width in pixels (max 384). Defaults to full paper width.
+      required: false
+      selector:
+        number: { min: 16, max: 384, step: 1, unit_of_measurement: px }
+    rotation:
+      name: Rotation
+      required: false
+      default: 0
+      selector:
+        select:
+          options: ["0", "90", "180", "270"]
+    dither:
+      name: Dithering
+      required: false
+      default: floyd-steinberg
+      selector:
+        select:
+          options: [floyd-steinberg, none, threshold]
+    threshold:
+      name: Threshold
+      description: Threshold value when dithering is set to "threshold".
+      required: false
+      default: 128
+      selector:
+        number: { min: 1, max: 254, step: 1 }
+    mirror:
+      name: Mirror
+      required: false
+      default: false
+      selector:
+        boolean:
+    invert:
+      name: Invert
+      required: false
+      default: false
+      selector:
+        boolean:
+    align:
+      name: Alignment
+      required: false
+      default: left
+      selector:
+        select:
+          options: [left, center, right]
+
+print_qr:
+  name: Print QR code
+  description: Render and print a QR code.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    data:
+      name: Data
+      description: Text or URL to encode.
+      required: true
+      example: "https://www.home-assistant.io"
+      selector:
+        text:
+    scale:
+      name: Module size
+      description: Size of each QR module in pixels.
+      required: false
+      default: 6
+      selector:
+        number: { min: 1, max: 16, step: 1 }
+    ec:
+      name: Error correction
+      required: false
+      default: M
+      selector:
+        select:
+          options: [L, M, Q, H]
+    align:
+      name: Alignment
+      required: false
+      default: center
+      selector:
+        select:
+          options: [left, center, right]
+
+print_barcode:
+  name: Print barcode
+  description: Render and print a 1D barcode (code128, ean13, etc.).
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    data:
+      name: Data
+      required: true
+      example: "012345678905"
+      selector:
+        text:
+    code:
+      name: Symbology
+      description: Barcode type supported by python-barcode (code128, code39, ean13, ean8, upc...).
+      required: false
+      default: code128
+      selector:
+        text:
+    align:
+      name: Alignment
+      required: false
+      default: center
+      selector:
+        select:
+          options: [left, center, right]
+    write_text:
+      name: Show value
+      description: Print the human-readable value beneath the bars.
+      required: false
+      default: true
+      selector:
+        boolean:
+
+print_separator:
+  name: Print separator
+  description: Print a full-width horizontal rule.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    char:
+      name: Character
+      description: Character to repeat across the width.
+      required: false
+      default: "-"
+      selector:
+        text:
+
+print_table:
+  name: Print table
+  description: Print evenly-spaced columns (ideal for receipts and logs).
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    rows:
+      name: Rows
+      description: List of rows, each a list of cell strings.
+      required: true
+      example: |
+        - ["Item", "Qty", "Price"]
+        - ["Coffee", "2", "$6.00"]
+      selector:
+        object:
+    aligns:
+      name: Column alignments
+      description: Per-column alignment list (left/center/right).
+      required: false
+      example: "[left, center, right]"
+      selector:
+        object:
+    size:
+      name: Font size
+      required: false
+      default: 24
+      selector:
+        number: { min: 8, max: 120, step: 1 }
+
+print_kvtable:
+  name: Print key/value table
+  description: Print two-column label/value pairs (label left, value right).
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    rows:
+      name: Pairs
+      description: A mapping, or a list of [label, value] pairs.
+      required: true
+      example: |
+        Subtotal: "$12.00"
+        Tax: "$0.96"
+        Total: "$12.96"
+      selector:
+        object:
+    size:
+      name: Font size
+      required: false
+      default: 24
+      selector:
+        number: { min: 8, max: 120, step: 1 }
+
+print_box:
+  name: Print boxed text
+  description: Print text surrounded by a border.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+    text:
+      name: Text
+      required: true
+      selector:
+        text:
+          multiline: true
+    style:
+      name: Border style
+      required: false
+      default: line
+      selector:
+        select:
+          options: [line, asterisk, hash]
+    size:
+      name: Font size
+      required: false
+      default: 28
+      selector:
+        number: { min: 8, max: 120, step: 1 }
+    align:
+      name: Alignment
+      required: false
+      default: left
+      selector:
+        select:
+          options: [left, center, right]
+
+print_test:
+  name: Print test strip
+  description: Print an all-black calibration strip with a label to verify the protocol over your proxy.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+
+feed:
+  name: Feed paper
+  description: Advance the paper without printing.
+  fields:
+    device_id:
+      name: Printer
+      description: Target printer(s). If omitted, broadcasts to every configured CTP500.
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    pixels:
+      name: Pixels
+      description: Number of pixels to advance.
+      required: false
+      default: 80
+      selector:
+        number: { min: 1, max: 1000, step: 1, unit_of_measurement: pixels }
