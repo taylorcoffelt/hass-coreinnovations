@@ -22,7 +22,7 @@ from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, Supp
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from PIL import Image as PILImage
+from PIL import Image as PILImage, ImageDraw
 
 from . import render
 from .catprinter import CatPrinterDevice
@@ -343,27 +343,58 @@ async def _handle_print_box(call: ServiceCall) -> ServiceResponse:
     return await _deliver(hass, call, image)
 
 
-def _build_test_image() -> PILImage.Image:
-    """A labelled all-black calibration strip used to validate the protocol."""
-    strip = PILImage.new("L", (render.PRINTER_WIDTH, 120), 0)  # all black
-    label = render.render_text("CTP500 TEST", size=32, align="center", bold=True)
-    out = PILImage.new("L", (render.PRINTER_WIDTH, strip.height + label.height), 255)
-    out.paste(strip, (0, 0))
-    out.paste(label, (0, strip.height))
+def _build_test_image(energy: int | None = None) -> PILImage.Image:
+    """A 0->100% dithered density gradient for tuning energy.
+
+    Left edge is 0% (white), right edge is 100% (black); Floyd-Steinberg
+    dithering turns the ramp into a dot-density gradient so you can see where
+    the burn starts and where it goes fully solid. A 0/25/50/75/100 scale and
+    the current energy value are printed below it for comparing strips.
+    """
+    width = render.PRINTER_WIDTH
+    grad_h = 90
+
+    gradient = PILImage.new("L", (width, grad_h))
+    pixels = gradient.load()
+    for x in range(width):
+        value = round(255 * (1 - x / (width - 1)))  # white (0%) -> black (100%)
+        for y in range(grad_h):
+            pixels[x, y] = value
+    gradient = gradient.convert("1").convert("L")  # Floyd-Steinberg dither
+
+    scale_h = 30
+    scale = PILImage.new("L", (width, scale_h), 255)
+    draw = ImageDraw.Draw(scale)
+    draw.fontmode = "1"
+    font = render._load_font(render.DEFAULT_FONT, 18)
+    for pct in (0, 25, 50, 75, 100):
+        x = min(max(round(pct / 100 * (width - 1)), 1), width - 2)
+        draw.line([(x, 0), (x, 7)], fill=0, width=1)
+        anchor = "la" if pct == 0 else "ra" if pct == 100 else "ma"
+        draw.text((x, 9), str(pct), fill=0, font=font, anchor=anchor)
+
+    caption = "CTP500 ENERGY" if energy is None else f"ENERGY {energy}  (0x{energy:04X})"
+    label = render.render_text(caption, size=28, align="center", bold=True)
+
+    out = PILImage.new("L", (width, grad_h + scale_h + label.height), 255)
+    out.paste(gradient, (0, 0))
+    out.paste(scale, (0, grad_h))
+    out.paste(label, (0, grad_h + scale_h))
     return out
 
 
 async def _handle_print_test(call: ServiceCall) -> ServiceResponse:
-    """Render a labelled all-black test strip to validate the protocol."""
+    """Render an energy-calibration gradient to validate the protocol."""
     hass = call.hass
-    image = await hass.async_add_executor_job(_build_test_image)
+    energy = call.data.get("energy")
+    image = await hass.async_add_executor_job(_build_test_image, energy)
     return await _deliver(hass, call, image)
 
 
 async def async_test_print(hass: HomeAssistant, entry_id: str) -> dict:
     """Render and print the calibration strip to one printer (used by the button)."""
     entry = hass.data[DOMAIN][entry_id]
-    image = await hass.async_add_executor_job(_build_test_image)
+    image = await hass.async_add_executor_job(_build_test_image, entry["options"]["energy"])
 
     buffer = io.BytesIO()
     image.convert("RGB").save(buffer, format="PNG")
