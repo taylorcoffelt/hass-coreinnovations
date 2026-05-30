@@ -1,0 +1,14 @@
+{
+  "services": {
+    "print_text": { "service": "mdi:format-text" },
+    "print_image": { "service": "mdi:image" },
+    "print_qr": { "service": "mdi:qrcode" },
+    "print_barcode": { "service": "mdi:barcode" },
+    "print_separator": { "service": "mdi:minus" },
+    "print_table": { "service": "mdi:table" },
+    "print_kvtable": { "service": "mdi:table-key" },
+    "print_box": { "service": "mdi:card-outline" },
+    "print_test": { "service": "mdi:printer-check" },
+    "feed": { "service": "mdi:arrow-down-bold" }
+  }
+}

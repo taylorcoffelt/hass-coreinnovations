@@ -1,7 +1,0 @@
-{
-    "services": {
-        "print": {
-            "service": "mdi:printer-wireless"
-        }
-    }
-}
