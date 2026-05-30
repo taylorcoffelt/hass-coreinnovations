@@ -22,7 +22,7 @@ print_text:
       description: Extra pixels to advance after printing.
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -99,7 +99,7 @@ print_image:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -187,7 +187,7 @@ print_qr:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -250,7 +250,7 @@ print_barcode:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -337,7 +337,7 @@ print_table:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -394,7 +394,7 @@ print_kvtable:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -445,7 +445,7 @@ print_box:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -506,7 +506,7 @@ print_test:
       name: Feed after print
       required: false
       selector:
-        number: { min: 0, max: 500, step: 1, unit_of_measurement: pixels }
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
     energy:
       name: Darkness
       description: Burn energy 0-65535 (overrides the configured default; higher = darker).
@@ -519,6 +519,12 @@ print_test:
       required: false
       selector:
         number: { min: 1, max: 255, step: 1 }
+    problem_feeding:
+      name: Feed by drawing blank rows
+      description: ON = feed via blank rows inside the lattice (reliable). OFF = use the feed_paper command.
+      required: false
+      selector:
+        boolean:
 
 feed:
   name: Feed paper

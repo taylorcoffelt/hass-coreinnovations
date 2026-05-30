@@ -126,7 +126,7 @@ class CatPrinterDevice:
         speed: int = DEFAULT_SPEED,
         energy: int = DEFAULT_ENERGY,
         feed: int = DEFAULT_FEED,
-        problem_feeding: bool = False,
+        problem_feeding: bool = True,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> dict:
@@ -168,7 +168,7 @@ class CatPrinterDevice:
         ble_device: BLEDevice,
         pixels: int,
         *,
-        problem_feeding: bool = False,
+        problem_feeding: bool = True,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
     ) -> dict:
