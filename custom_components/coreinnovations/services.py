@@ -53,6 +53,8 @@ _TARGET = {
     vol.Optional("energy"): vol.All(vol.Coerce(int), vol.Range(min=0, max=0xFFFF)),
     vol.Optional("speed"): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
     vol.Optional("problem_feeding"): cv.boolean,
+    vol.Optional("packet_delay"): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
+    vol.Optional("chunk_size"): vol.All(vol.Coerce(int), vol.Range(min=20, max=512)),
 }
 _ALIGN = vol.In(["left", "center", "right"])
 
@@ -232,6 +234,10 @@ async def _deliver(
             overrides[key] = int(value)
     if "problem_feeding" in call.data:
         overrides["problem_feeding"] = bool(call.data["problem_feeding"])
+    if "chunk_size" in call.data:
+        overrides["chunk_size"] = int(call.data["chunk_size"])
+    if "packet_delay" in call.data:  # service takes ms, device wants seconds
+        overrides["packet_delay"] = int(call.data["packet_delay"]) / 1000.0
     if "energy" not in overrides and energy_default is not None:
         overrides["energy"] = energy_default
 
