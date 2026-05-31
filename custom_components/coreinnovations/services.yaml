@@ -521,10 +521,22 @@ print_test:
         number: { min: 1, max: 255, step: 1 }
     problem_feeding:
       name: Feed by drawing blank rows
-      description: ON = feed via blank rows inside the lattice (reliable). OFF = use the feed_paper command.
+      description: ON = feed via blank rows inside the lattice (reliable). OFF = use the feed_paper command (fast).
       required: false
       selector:
         boolean:
+    packet_delay:
+      name: Delay between BLE writes (ms)
+      description: Override the configured pacing for this print.
+      required: false
+      selector:
+        number: { min: 0, max: 1000, step: 1, unit_of_measurement: milliseconds }
+    chunk_size:
+      name: BLE write chunk size (bytes)
+      description: Override the configured chunk size for this print.
+      required: false
+      selector:
+        number: { min: 20, max: 512, step: 1, unit_of_measurement: bytes }
 
 feed:
   name: Feed paper
