@@ -462,6 +462,7 @@ async def _handle_feed(call: ServiceCall) -> ServiceResponse:
             problem_feeding=options["problem_feeding"],
             chunk_size=options["chunk_size"],
             packet_delay=options["packet_delay"],
+            strict_flow_control=options["strict_flow_control"],
         )
         results.append({"address": address, **result})
     return {"results": results}

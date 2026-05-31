@@ -22,6 +22,7 @@ from .const import (
     CONF_PACKET_DELAY,
     CONF_PROBLEM_FEEDING,
     CONF_SPEED,
+    CONF_STRICT_FLOW_CONTROL,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_ENERGY,
     DEFAULT_FEED,
@@ -30,6 +31,7 @@ from .const import (
     DEFAULT_PROBLEM_FEEDING,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SPEED,
+    DEFAULT_STRICT_FLOW_CONTROL,
     DOMAIN,
     EMPTY_PNG,
     ImageAndBLEData,
@@ -60,6 +62,9 @@ def _resolve_print_options(entry: ConfigEntry) -> dict:
         # stored in milliseconds, the printer wants seconds
         "packet_delay": int(value(CONF_PACKET_DELAY, DEFAULT_PACKET_DELAY)) / 1000.0,
         "problem_feeding": bool(value(CONF_PROBLEM_FEEDING, DEFAULT_PROBLEM_FEEDING)),
+        "strict_flow_control": bool(
+            value(CONF_STRICT_FLOW_CONTROL, DEFAULT_STRICT_FLOW_CONTROL)
+        ),
     }
 
 

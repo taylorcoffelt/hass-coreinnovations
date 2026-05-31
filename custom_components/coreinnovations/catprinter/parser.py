@@ -95,7 +95,9 @@ class CatPrinterDevice:
                 pass
             self._notify_connection()
 
-    async def _ensure_connected(self, ble_device: BLEDevice) -> CatPrinterClient:
+    async def _ensure_connected(
+        self, ble_device: BLEDevice, strict_flow_control: bool = False
+    ) -> CatPrinterClient:
         if not self.is_connected:
             self.client = await establish_connection(
                 BleakClient, ble_device, ble_device.address
@@ -103,7 +105,7 @@ class CatPrinterDevice:
             if not self.client.is_connected:
                 raise RuntimeError("could not connect to the CTP500 printer")
             self._notify_connection()
-        return CatPrinterClient(self.client)
+        return CatPrinterClient(self.client, strict_flow_control)
 
     async def update_device(self, ble_device: BLEDevice) -> BLEData:
         """Refresh cached metadata.
@@ -129,9 +131,10 @@ class CatPrinterDevice:
         problem_feeding: bool = True,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
+        strict_flow_control: bool = False,
     ) -> dict:
         async with self.lock:
-            printer = await self._ensure_connected(ble_device)
+            printer = await self._ensure_connected(ble_device, strict_flow_control)
 
             self._is_printing = True
             self._print_start_time = time.time()
@@ -171,9 +174,10 @@ class CatPrinterDevice:
         problem_feeding: bool = True,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         packet_delay: float = DEFAULT_PACKET_DELAY,
+        strict_flow_control: bool = False,
     ) -> dict:
         async with self.lock:
-            printer = await self._ensure_connected(ble_device)
+            printer = await self._ensure_connected(ble_device, strict_flow_control)
             try:
                 await printer.feed_paper(
                     pixels,

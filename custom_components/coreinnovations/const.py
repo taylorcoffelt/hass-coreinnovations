@@ -24,6 +24,7 @@ CONF_CHUNK_SIZE = "chunk_size"
 CONF_PACKET_DELAY = "packet_delay"  # milliseconds between BLE write chunks
 CONF_PROBLEM_FEEDING = "problem_feeding"
 CONF_KEEP_CONNECTION = "keep_connection"
+CONF_STRICT_FLOW_CONTROL = "strict_flow_control"
 
 # Defaults, matched to NaitLee/Cat-Printer (see catprinter.printer for rationale).
 DEFAULT_SCAN_INTERVAL = 3600
@@ -35,6 +36,10 @@ DEFAULT_CHUNK_SIZE = 200
 DEFAULT_PACKET_DELAY = 20
 DEFAULT_PROBLEM_FEEDING = True  # CTP500: feed via in-lattice blank rows (feed_paper is unreliable)
 DEFAULT_KEEP_CONNECTION = False
+# Honor the printer's pause/resume frames the way Cat-Printer does: tolerate
+# proxy-coalesced notifications and never write into a full buffer (which drops
+# rows). See catprinter.printer for the behavioural contrast with legacy mode.
+DEFAULT_STRICT_FLOW_CONTROL = True
 
 # 1x1 white PNG placeholder for the "last receipt" image entity.
 EMPTY_PNG: bytes = base64.b64decode(

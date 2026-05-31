@@ -13,7 +13,8 @@
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
           "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
-          "keep_connection": "Keep BLE connection open"
+          "keep_connection": "Keep BLE connection open",
+          "strict_flow_control": "Strict flow control (wait for printer; aborts instead of dropping rows)"
         }
       },
       "bluetooth_confirm": {
@@ -26,7 +27,8 @@
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
           "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
-          "keep_connection": "Keep BLE connection open"
+          "keep_connection": "Keep BLE connection open",
+          "strict_flow_control": "Strict flow control (wait for printer; aborts instead of dropping rows)"
         }
       }
     },
@@ -48,7 +50,8 @@
           "chunk_size": "BLE write chunk size (bytes)",
           "scan_interval": "Scan interval (seconds)",
           "problem_feeding": "Feed by drawing blank lines (for printers that ignore the feed command)",
-          "keep_connection": "Keep BLE connection open"
+          "keep_connection": "Keep BLE connection open",
+          "strict_flow_control": "Strict flow control (wait for printer; aborts instead of dropping rows)"
         }
       }
     }

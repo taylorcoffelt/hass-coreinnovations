@@ -29,6 +29,12 @@ DATA_FLOW_PAUSE = b"\x51\x78\xae\x01\x01\x00\x10\x70\xff"
 DATA_FLOW_RESUME = b"\x51\x78\xae\x01\x01\x00\x00\x00\xff"
 # Safety cap so a missed "resume" can't wedge a print forever.
 FLOW_PAUSE_TIMEOUT = 10.0
+# Strict mode mirrors Cat-Printer: it never resumes on its own. If the printer
+# stays paused past this ceiling the print is aborted (raised) rather than
+# written into a full buffer — a clean error beats silently dropped rows. Set
+# higher than FLOW_PAUSE_TIMEOUT because here the timeout means "give up", not
+# "blast the rest through".
+STRICT_FLOW_TIMEOUT = 30.0
 
 # Default tuning, matched to NaitLee/Cat-Printer. Speed is lower = faster
 # (values < 4 may stall the feed motor); Cat-Printer uses 32 (quality 3).
@@ -74,11 +80,12 @@ def image_to_rows(image: Image.Image) -> list[bytes]:
 class CatPrinterClient:
     """Wraps a connected :class:`BleakClient` and speaks the cat-printer protocol."""
 
-    def __init__(self, client: BleakClient) -> None:
+    def __init__(self, client: BleakClient, strict_flow_control: bool = False) -> None:
         self._client = client
         self._notifications = bytearray()
         self._write_response: bool | None = None
         self._paused = False
+        self._strict = strict_flow_control
 
     def _use_response(self) -> bool:
         """Prefer write-with-response when AE01 supports it (Bleak's own rule).
@@ -107,11 +114,23 @@ class CatPrinterClient:
 
     def _on_notify(self, _characteristic: Any, data: bytearray) -> None:
         frame = bytes(data)
-        if frame == DATA_FLOW_PAUSE:
+        self._notifications.extend(frame)
+        if self._strict:
+            # A BLE proxy may coalesce several frames into one notification or
+            # split one across two callbacks, so match the pause/resume
+            # signatures anywhere in a small rolling buffer and honour whichever
+            # appears most recently — rather than requiring an exact single-frame
+            # match, which silently misses the signal and overflows the buffer.
+            del self._notifications[:-64]
+            recent = bytes(self._notifications)
+            pause = recent.rfind(DATA_FLOW_PAUSE)
+            resume = recent.rfind(DATA_FLOW_RESUME)
+            if pause != -1 or resume != -1:
+                self._paused = pause > resume
+        elif frame == DATA_FLOW_PAUSE:
             self._paused = True
         elif frame == DATA_FLOW_RESUME:
             self._paused = False
-        self._notifications.extend(data)
         _LOGGER.debug("Notify (%d bytes): %s", len(data), frame.hex())
 
     async def _write_chunked(
@@ -129,17 +148,41 @@ class CatPrinterClient:
             chunk = data[offset : offset + chunk_size]
             # Respect the printer's flow control: while it has asked us to pause
             # (buffer filling) hold off, or it will drop the rows we send.
-            waited = 0.0
-            while self._paused:
-                if waited >= FLOW_PAUSE_TIMEOUT:
-                    _LOGGER.debug("Flow-control pause timed out; resuming")
-                    self._paused = False
-                    break
-                await sleep(0.05)
-                waited += 0.05
+            await self._wait_while_paused()
             await self._client.write_gatt_char(WRITE_UUID, chunk, response=response)
             if packet_delay > 0:
                 await sleep(packet_delay)
+
+    async def _wait_while_paused(self) -> None:
+        """Block while the printer has asked us to pause (its buffer is filling).
+
+        Strict mode mirrors Cat-Printer: poll the pause flag and never resume on
+        our own. If the printer stays paused past ``STRICT_FLOW_TIMEOUT`` the
+        print is aborted so the stall is visible, instead of writing into a full
+        buffer (which the printer silently discards). Legacy mode keeps the
+        original behaviour: force a resume after ``FLOW_PAUSE_TIMEOUT`` and carry
+        on — faster to recover, but it can drop a band of rows on a real stall.
+        """
+        if self._strict:
+            waited = 0.0
+            while self._paused:
+                if waited >= STRICT_FLOW_TIMEOUT:
+                    raise TimeoutError(
+                        "printer stalled under flow control for "
+                        f"{STRICT_FLOW_TIMEOUT:.0f}s without a resume signal"
+                    )
+                await sleep(0.2)
+                waited += 0.2
+            return
+
+        waited = 0.0
+        while self._paused:
+            if waited >= FLOW_PAUSE_TIMEOUT:
+                _LOGGER.debug("Flow-control pause timed out; resuming")
+                self._paused = False
+                break
+            await sleep(0.05)
+            waited += 0.05
 
     @staticmethod
     def _blank_rows(count: int) -> bytes:
