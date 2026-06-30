@@ -40,6 +40,7 @@ _PRINT_SERVICES = (
     "print_table",
     "print_kvtable",
     "print_box",
+    "print_document",
     "print_test",
 )
 _ALL_SERVICES = _PRINT_SERVICES + ("feed",)
@@ -128,6 +129,14 @@ _SCHEMAS: dict[str, vol.Schema] = {
             vol.Optional("align", default="left"): _ALIGN,
         }
     ),
+    "print_document": vol.Schema(
+        {
+            **_TARGET,
+            vol.Required("blocks"): vol.All(cv.ensure_list, [dict]),
+            vol.Optional("font", default=render.DEFAULT_FONT): cv.string,
+            vol.Optional("gap", default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=200)),
+        }
+    ),
     "print_test": vol.Schema({**_TARGET}),
     "feed": vol.Schema(
         {
@@ -152,6 +161,7 @@ def async_register_services(hass: HomeAssistant) -> None:
         "print_table": _handle_print_table,
         "print_kvtable": _handle_print_kvtable,
         "print_box": _handle_print_box,
+        "print_document": _handle_print_document,
         "print_test": _handle_print_test,
         "feed": _handle_feed,
     }
@@ -348,6 +358,35 @@ async def _handle_print_box(call: ServiceCall) -> ServiceResponse:
         style=call.data["style"],
         size=call.data["size"],
         align=call.data["align"],
+    )
+    return await _deliver(hass, call, image)
+
+
+async def _handle_print_document(call: ServiceCall) -> ServiceResponse:
+    """Compose many blocks into one image so a whole receipt prints in one job."""
+    hass = call.hass
+    blocks: list[dict] = []
+    for raw in call.data["blocks"]:
+        block = dict(raw)
+        if str(block.get("type", "")).lower() == "image":
+            source = block.get("image")
+            if source is None:
+                raise ServiceValidationError("Document image block requires an 'image' source")
+            if hasattr(source, "async_render"):
+                source.hass = hass
+                source = source.async_render(parse_result=False)
+            raw_bytes = await _load_image_bytes(hass, str(source))
+            block["_image"] = await hass.async_add_executor_job(
+                render.decode_image_bytes, raw_bytes
+            )
+        blocks.append(block)
+
+    image = await _render(
+        hass,
+        render.render_document,
+        blocks,
+        font=call.data["font"],
+        gap=call.data["gap"],
     )
     return await _deliver(hass, call, image)
 

@@ -71,10 +71,10 @@ print_text:
         select:
           options: [none, single, double]
     font:
-      name: Font file
-      description: Font filename bundled with the integration, or an absolute path.
+      name: Font
+      description: "Bundled alias (ubuntu, ubuntu-light, ubuntu-light-italic, ubuntu-bold, ppb, rbm), a font filename, or an absolute path."
       required: false
-      default: ppb.ttf
+      default: ubuntu
       selector:
         text:
 
@@ -484,6 +484,76 @@ print_box:
       selector:
         select:
           options: [left, center, right]
+
+print_document:
+  name: Print document
+  description: >-
+    Compose a whole receipt (header, rules, checkboxes, tables, mixed font
+    sizes, QR/barcodes, images) into a single image and print it in one job —
+    no per-line feed gaps or reconnects.
+  fields:
+    device_id:
+      name: Printer
+      required: false
+      selector:
+        device:
+          integration: coreinnovations
+          multiple: true
+    preview:
+      name: Preview only
+      required: false
+      default: false
+      selector:
+        boolean:
+    feed:
+      name: Feed after print
+      required: false
+      selector:
+        number: { min: 0, max: 2000, step: 1, unit_of_measurement: pixels }
+    energy:
+      name: Darkness
+      description: Burn energy 0-65535 (overrides the configured default; higher = darker).
+      required: false
+      selector:
+        number: { min: 0, max: 65535, step: 256 }
+    speed:
+      name: Speed
+      description: Lower is faster; below ~4 may stall the feed.
+      required: false
+      selector:
+        number: { min: 1, max: 255, step: 1 }
+    font:
+      name: Default font
+      description: "Default font for text blocks (alias, filename, or absolute path). Each block may override it."
+      required: false
+      default: ubuntu
+      selector:
+        text:
+    gap:
+      name: Gap between blocks
+      description: Blank pixels inserted between blocks.
+      required: false
+      default: 0
+      selector:
+        number: { min: 0, max: 200, step: 1, unit_of_measurement: px }
+    blocks:
+      name: Blocks
+      description: >-
+        Ordered list of blocks. Each is a mapping with a "type" and its fields.
+        Types: header, text, rule, checkbox, table, kvtable, box, qr, barcode,
+        image, space. Text supports glyph fallback and :mdi-icon-name: tokens.
+      required: true
+      example: |
+        - { type: header, text: "DAILY STANDUP" }
+        - { type: rule, style: double }
+        - { type: text, text: "Crew: 3  Weather: :weather-sunny:", size: 24 }
+        - { type: checkbox, text: "Restock paper", checked: true }
+        - { type: checkbox, text: "Email the report", checked: false }
+        - { type: rule }
+        - { type: kvtable, rows: { Total: "$12.96" }, size: 22 }
+        - { type: qr, data: "https://home-assistant.io", scale: 4 }
+      selector:
+        object:
 
 print_test:
   name: Print test strip
