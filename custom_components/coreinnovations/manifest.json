@@ -23,7 +23,8 @@
   "issue_tracker": "https://github.com/taylorcoffelt/hass-coreinnovations/issues",
   "requirements": [
     "qrcode[pil]==7.4.2",
-    "python-barcode==0.15.1"
+    "python-barcode==0.15.1",
+    "fonttools==4.58.5"
   ],
   "version": "0.1.0"
 }

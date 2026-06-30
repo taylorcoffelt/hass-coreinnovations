@@ -21,6 +21,15 @@ small, discrete services with simple parameters.
 - Discrete receipt services: `print_text`, `print_image`, `print_qr`,
   `print_barcode`, `print_separator`, `print_table`, `print_kvtable`,
   `print_box`, `feed`, and a `print_test` calibration strip.
+- **`print_document`** composites a whole receipt — header, rules, checkboxes,
+  tables, mixed font sizes, QR/barcodes, images — into a *single* image and
+  prints it in **one** BLE job (no per-line feed gaps or reconnects).
+- Bundled **Ubuntu Nerd Fonts** (`ubuntu`, `ubuntu-light`,
+  `ubuntu-light-italic`, `ubuntu-bold`) plus **glyph fallback**: arrows, check
+  marks, stars, box-drawing and other Unicode symbols that the base font lacks
+  are remapped onto Nerd Font / Material Design Icon glyphs instead of printing
+  as tofu (□) boxes. You can also embed any MDI icon inline with a
+  `:mdi:icon-name:` token (e.g. `:mdi:weather-sunny:`, `:mdi:wifi:`).
 - **Preview** any print service with `preview: true` to render to the
   *Last Receipt* image entity without using paper.
 - Per-device targeting via `device_id` (omit to broadcast to every printer).
@@ -128,6 +137,33 @@ data:
   style: line
   align: center
 ```
+
+### `coreinnovations.print_document`
+
+Lay out an entire receipt in one job. `blocks` is an ordered list; each block is
+a mapping with a `type` and its own fields. Types: `header`, `text`, `rule`
+(a.k.a. `separator`/`hr`), `checkbox`, `table`, `kvtable`, `box`, `qr`,
+`barcode`, `image`, `space`. A top-level `font` sets the default for text blocks
+(each block may override with its own `font`).
+
+```yaml
+service: coreinnovations.print_document
+data:
+  blocks:
+    - { type: header, text: "DAILY STANDUP" }
+    - { type: rule, style: double }
+    - { type: text, text: "Crew 3   Weather :mdi:weather-sunny:", size: 24 }
+    - { type: text, text: "Tasks", size: 34, bold: true }
+    - { type: checkbox, text: "Restock paper", checked: true }
+    - { type: checkbox, text: "Email the report", checked: false }
+    - { type: rule, style: dashed }
+    - { type: kvtable, rows: { Total: "$12.96" }, size: 22 }
+    - { type: qr, data: "https://www.home-assistant.io", scale: 4 }
+```
+
+`rule` styles: `solid`, `double`, `dashed`, `dotted`. `checkbox` marks: `check`,
+`x`, `fill`, `none`. Use `{ type: space, height: 24 }` for explicit vertical
+spacing, or a top-level `gap` for uniform spacing between every block.
 
 ### `coreinnovations.feed` / `print_test`
 
