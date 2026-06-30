@@ -69,7 +69,7 @@ ICON_FONT = "materialdesignicons-webfont.ttf"
 # Real bold faces, preferred over synthetic stroke-bolding when available.
 _BOLD_SIBLING = {
     "UbuntuNerdFont-Regular.ttf": "UbuntuNerdFontPropo-Bold.ttf",
-    "UbuntuNerdFont-Light.ttf": "UbuntuNerdFont-Regular.ttf",
+    "UbuntuNerdFont-Light.ttf": "UbuntuNerdFontPropo-Bold.ttf",
     "UbuntuNerdFontPropo-Bold.ttf": "UbuntuNerdFontPropo-Bold.ttf",
 }
 
@@ -139,14 +139,12 @@ _ASCII_FALLBACK = {
     0x252C: "+", 0x2534: "+", 0x253C: "+",
     0x2550: "=", 0x2551: "|", 0x2554: "+", 0x2557: "+", 0x255A: "+", 0x255D: "+",
     0x2588: "#", 0x2593: "#", 0x2592: "#", 0x2591: ".",
-    0x2022: "•",  # bullet is covered; keep as-is
-    0x2026: "...",  # ellipsis (covered, but harmless)
 }
 
-# Horizontal anchors for PIL text placement, keyed by alignment.
-_ALIGN_ANCHOR = {"left": "la", "center": "ma", "right": "ra"}
-
-_ICON_TOKEN = re.compile(r":([a-z0-9][a-z0-9-]*):")
+# ``:mdi:icon-name:`` tokens are expanded to Material Design Icon glyphs.  The
+# ``mdi:`` prefix keeps everyday text (``ratio 16:9``, ``:-)``, log dumps) from
+# being accidentally rewritten into icons.
+_ICON_TOKEN = re.compile(r":mdi:([a-z0-9][a-z0-9-]*):")
 
 
 # --- font loading & glyph coverage -----------------------------------------
@@ -225,12 +223,12 @@ def _mdi_names() -> dict[str, int]:
 
 
 def expand_icons(text: str) -> str:
-    """Replace ``:icon-name:`` tokens with the matching Material Design Icon glyph.
+    """Replace ``:mdi:icon-name:`` tokens with the matching Material Design Icon glyph.
 
     Only tokens that resolve to a real icon name are substituted; anything else
-    (``:-)``, ``12:30:00`` ...) is left untouched.
+    (``:mdi:not-a-real-icon:``, ``:-)``, ``12:30:00`` ...) is left untouched.
     """
-    if ":" not in text:
+    if ":mdi:" not in text:
         return text
     names = _mdi_names()
     if not names:
@@ -254,7 +252,6 @@ class FontStack:
     """
 
     def __init__(self, paths: list[str], size: int) -> None:
-        self.size = size
         self.fonts = [_load_one(p, size) for p in paths]
         self.coverage = [_coverage(p) for p in paths]
         self.primary = self.fonts[0]
@@ -279,6 +276,10 @@ class FontStack:
         ascii_alt = _ASCII_FALLBACK.get(cp)
         if ascii_alt is not None:
             return ascii_alt, self.primary
+        _LOGGER.debug(
+            "No glyph for U+%04X (%r) in the font stack; substituting %r",
+            cp, ch, MISSING_GLYPH,
+        )
         return MISSING_GLYPH, self.primary
 
     def runs(self, text: str) -> list[tuple[str, ImageFont.FreeTypeFont]]:
@@ -301,8 +302,10 @@ class FontStack:
     def getmetrics(self) -> tuple[int, int]:
         return self.primary.getmetrics()
 
-    def textlength(self, draw: ImageDraw.ImageDraw, text: str) -> float:
-        return sum(draw.textlength(seg, font=font) for seg, font in self.runs(text))
+    def textlength(self, text: str) -> float:
+        """Advance width of ``text``. Uses ``font.getlength`` so no (shared,
+        non-thread-safe) ``ImageDraw`` is needed for measurement."""
+        return sum(font.getlength(seg) for seg, font in self.runs(text))
 
     def draw(
         self,
@@ -320,7 +323,7 @@ class FontStack:
                 (x, baseline), seg, fill=fill, font=font, anchor="ls",
                 stroke_width=stroke_width,
             )
-            x += draw.textlength(seg, font=font)
+            x += font.getlength(seg)
         return x
 
 
@@ -343,18 +346,6 @@ def _has_real_bold(font: str) -> bool:
     return _bold_path(_existing_font_path(font)) is not None
 
 
-_MEASURE = ImageDraw.Draw(Image.new("L", (1, 1)))
-_MEASURE.fontmode = "1"
-
-
-def _align_x(align: str, width: int) -> int:
-    if align == "center":
-        return width // 2
-    if align == "right":
-        return width - 1
-    return 0
-
-
 def _line_x(align: str, line_width: float, width: int, padding: int) -> float:
     if align == "center":
         return (width - line_width) / 2
@@ -373,7 +364,7 @@ def _wrap(text: str, stack: FontStack, max_width: int) -> list[str]:
         current = ""
         for word in paragraph.split(" "):
             candidate = f"{current} {word}".strip()
-            if current and stack.textlength(_MEASURE, candidate) > max_width:
+            if current and stack.textlength(candidate) > max_width:
                 lines.append(current)
                 current = word
             else:
@@ -404,7 +395,9 @@ def render_text(
     stack = _stack(font, size, bold=real_bold)
     stroke = 1 if (bold and not real_bold) else 0
 
-    max_text_width = width - 2 * padding
+    # getlength measures the glyph advance, not the stroke bleed; reserve a
+    # little extra so synthetic-bold lines near the edge still wrap in time.
+    max_text_width = width - 2 * padding - 2 * stroke
     lines = _wrap(text, stack, max_text_width)
 
     ascent, descent = stack.getmetrics()
@@ -418,7 +411,7 @@ def render_text(
     for i, line in enumerate(lines):
         y = padding + i * line_height
         baseline = y + ascent
-        line_width = stack.textlength(draw, line)
+        line_width = stack.textlength(line)
         x = _line_x(align, line_width, width, padding)
         stack.draw(draw, x, baseline, line, fill=BLACK, stroke_width=stroke)
         if underline in ("single", "double") and line:
@@ -478,7 +471,7 @@ def render_separator(
     if char in line_styles:
         return render_rule(style=line_styles[char], width=width)
     stack = _stack(font, size)
-    unit = max(1, stack.textlength(_MEASURE, char))
+    unit = max(1, stack.textlength(char))
     count = max(1, int(width / unit))
     return render_text(char * count, size=size, align="center", font=font, width=width)
 
@@ -640,10 +633,10 @@ def render_table(
         baseline = y + ascent
         for col in range(columns):
             cell = expand_icons(row[col]) if col < len(row) else ""
-            cell = _ellipsize(draw, stack, cell, col_width)
+            cell = _ellipsize(stack, cell, col_width)
             align = aligns[col] if aligns and col < len(aligns) else "left"
             cell_x = padding + col * col_width
-            cell_w = stack.textlength(draw, cell)
+            cell_w = stack.textlength(cell)
             if align == "center":
                 x = cell_x + (col_width - cell_w) / 2
             elif align == "right":
@@ -679,7 +672,7 @@ def render_kvtable(
         key = expand_icons(str(pair[0])) if len(pair) > 0 else ""
         value = expand_icons(str(pair[1])) if len(pair) > 1 else ""
         stack.draw(draw, padding, baseline, key, fill=BLACK)
-        value_w = stack.textlength(draw, value)
+        value_w = stack.textlength(value)
         stack.draw(draw, width - padding - value_w, baseline, value, fill=BLACK)
         y += line_height
     return image
@@ -707,11 +700,14 @@ def render_box(
     draw.fontmode = "1"
     if char:
         stack = _stack(font, max(12, size // 2))
-        unit = max(1, stack.textlength(draw, char))
+        unit = max(1, stack.textlength(char))
         count = max(1, int(width / unit))
+        border = char * count
         ascent, _ = stack.getmetrics()
-        stack.draw(draw, 0, ascent, char * count, fill=BLACK)
-        stack.draw(draw, 0, height - 1, char * count, fill=BLACK)
+        border_w = stack.textlength(border)
+        bx = (width - border_w) / 2  # centre the (possibly sub-width) border row
+        stack.draw(draw, bx, ascent, border, fill=BLACK)
+        stack.draw(draw, bx, height - 1, border, fill=BLACK)
     else:
         draw.rectangle([(1, 1), (width - 2, height - 2)], outline=BLACK, width=2)
     return image
@@ -740,26 +736,38 @@ def vstack(images: list[Image.Image], *, gap: int = 0, width: int = PRINTER_WIDT
     return canvas
 
 
+def _bint(block: dict, key: str, default: int) -> int:
+    """Coerce a document block field to int, with a clear error on bad input."""
+    value = block.get(key, default)
+    try:
+        return int(value)
+    except (TypeError, ValueError) as err:
+        raise ValueError(
+            f"document block type={block.get('type', 'text')!r}: "
+            f"{key!r} must be a number, got {value!r}"
+        ) from err
+
+
 def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | None:
     """Render a single document block to a full-width image."""
     btype = str(block.get("type", "text")).lower()
     font = block.get("font", doc_font)
 
     if btype == "space":
-        return _blank(int(block.get("height", 16)), width)
+        return _blank(_bint(block, "height", 16), width)
 
     if btype in ("rule", "separator", "hr"):
         return render_rule(
             style=block.get("style", "solid"),
-            thickness=int(block.get("thickness", 2)),
-            margin=int(block.get("margin", 8)),
+            thickness=_bint(block, "thickness", 2),
+            margin=_bint(block, "margin", 8),
             width=width,
         )
 
     if btype == "header":
         return render_text(
             str(block.get("text", "")),
-            size=int(block.get("size", 48)),
+            size=_bint(block, "size", 48),
             align=block.get("align", "center"),
             bold=block.get("bold", True),
             underline=block.get("underline", "none"),
@@ -770,13 +778,13 @@ def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | No
     if btype == "text":
         return render_text(
             str(block.get("text", "")),
-            size=int(block.get("size", 28)),
+            size=_bint(block, "size", 28),
             align=block.get("align", "left"),
             bold=block.get("bold", False),
             underline=block.get("underline", "none"),
             font=font,
             width=width,
-            line_spacing=int(block.get("line_spacing", 4)),
+            line_spacing=_bint(block, "line_spacing", 4),
         )
 
     if btype == "checkbox":
@@ -784,16 +792,16 @@ def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | No
             str(block.get("text", "")),
             checked=bool(block.get("checked", False)),
             mark=block.get("mark", "check"),
-            size=int(block.get("size", 28)),
+            size=_bint(block, "size", 28),
             font=font,
             width=width,
-            indent=int(block.get("indent", 0)),
+            indent=_bint(block, "indent", 0),
         )
 
     if btype == "qr":
         return render_qr(
             str(block.get("data", "")),
-            scale=int(block.get("scale", 6)),
+            scale=_bint(block, "scale", 6),
             ec=block.get("ec", "M"),
             align=block.get("align", "center"),
             width=width,
@@ -812,7 +820,7 @@ def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | No
         return render_table(
             block.get("rows", []),
             aligns=block.get("aligns"),
-            size=int(block.get("size", 24)),
+            size=_bint(block, "size", 24),
             font=font,
             width=width,
         )
@@ -821,13 +829,13 @@ def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | No
         rows = block.get("rows", [])
         if isinstance(rows, dict):
             rows = [[str(k), str(v)] for k, v in rows.items()]
-        return render_kvtable(rows, size=int(block.get("size", 24)), font=font, width=width)
+        return render_kvtable(rows, size=_bint(block, "size", 24), font=font, width=width)
 
     if btype == "box":
         return render_box(
             str(block.get("text", "")),
             style=block.get("style", "line"),
-            size=int(block.get("size", 28)),
+            size=_bint(block, "size", 28),
             align=block.get("align", "left"),
             font=font,
             width=width,
@@ -840,12 +848,12 @@ def _render_block(block: dict, *, doc_font: str, width: int) -> Image.Image | No
             return None
         return process_image(
             source,
-            image_width=int(block.get("image_width", width)),
-            rotation=int(block.get("rotation", 0)),
+            image_width=_bint(block, "image_width", width),
+            rotation=_bint(block, "rotation", 0),
             mirror=bool(block.get("mirror", False)),
             invert=bool(block.get("invert", False)),
             dither=block.get("dither", "floyd-steinberg"),
-            threshold=int(block.get("threshold", 128)),
+            threshold=_bint(block, "threshold", 128),
             align=block.get("align", "left"),
             width=width,
         )
@@ -947,11 +955,9 @@ def _place(image: Image.Image, align: str, width: int) -> Image.Image:
     return canvas
 
 
-def _ellipsize(
-    draw: ImageDraw.ImageDraw, stack: FontStack, text: str, max_width: int
-) -> str:
-    if stack.textlength(draw, text) <= max_width:
+def _ellipsize(stack: FontStack, text: str, max_width: int) -> str:
+    if stack.textlength(text) <= max_width:
         return text
-    while text and stack.textlength(draw, text + "…") > max_width:
+    while text and stack.textlength(text + "…") > max_width:
         text = text[:-1]
     return text + "…"

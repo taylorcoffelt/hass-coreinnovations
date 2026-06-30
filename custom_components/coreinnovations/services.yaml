@@ -541,12 +541,12 @@ print_document:
       description: >-
         Ordered list of blocks. Each is a mapping with a "type" and its fields.
         Types: header, text, rule, checkbox, table, kvtable, box, qr, barcode,
-        image, space. Text supports glyph fallback and :mdi-icon-name: tokens.
+        image, space. Text supports glyph fallback and :mdi:icon-name: tokens.
       required: true
       example: |
         - { type: header, text: "DAILY STANDUP" }
         - { type: rule, style: double }
-        - { type: text, text: "Crew: 3  Weather: :weather-sunny:", size: 24 }
+        - { type: text, text: "Crew: 3  Weather: :mdi:weather-sunny:", size: 24 }
         - { type: checkbox, text: "Restock paper", checked: true }
         - { type: checkbox, text: "Email the report", checked: false }
         - { type: rule }

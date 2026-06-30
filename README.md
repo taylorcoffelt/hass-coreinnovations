@@ -29,7 +29,7 @@ small, discrete services with simple parameters.
   marks, stars, box-drawing and other Unicode symbols that the base font lacks
   are remapped onto Nerd Font / Material Design Icon glyphs instead of printing
   as tofu (□) boxes. You can also embed any MDI icon inline with a
-  `:icon-name:` token (e.g. `:weather-sunny:`, `:wifi:`).
+  `:mdi:icon-name:` token (e.g. `:mdi:weather-sunny:`, `:mdi:wifi:`).
 - **Preview** any print service with `preview: true` to render to the
   *Last Receipt* image entity without using paper.
 - Per-device targeting via `device_id` (omit to broadcast to every printer).
@@ -152,7 +152,7 @@ data:
   blocks:
     - { type: header, text: "DAILY STANDUP" }
     - { type: rule, style: double }
-    - { type: text, text: "Crew 3   Weather :weather-sunny:", size: 24 }
+    - { type: text, text: "Crew 3   Weather :mdi:weather-sunny:", size: 24 }
     - { type: text, text: "Tasks", size: 34, bold: true }
     - { type: checkbox, text: "Restock paper", checked: true }
     - { type: checkbox, text: "Email the report", checked: false }
